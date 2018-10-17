@@ -1,10 +1,10 @@
 function Coder()
   filename='Herida_32bits.wav';
   [input_music_array,Fs]=audioread(filename);
-  
-  disp("Inicializacion de metadatos, a cada pregunta ingrese el texto. En caso de no querer agregar el dato, solo presione ENTER");
-  metadatos=insertarMetadatos();
-  parametros_usuario=set_parametros_codificacion();
+  str_metadatos=json_decoder('metadatos.json',"Se codificaran los siguientes metadatos");
+  metadatos=insertarMetadatos(str_metadatos);
+  str_parametros=json_decoder('parametros_usuario.json',"Se utilizaran los siguientes parametros");
+  parametros_usuario=set_parametros_codificacion(str_parametros);
   disp("Inicializando la generacion de ventanas");
   ventanas= creador_de_ventanas(input_music_array,parametros_usuario(1)); 
   disp("realizando el multiplexado");
@@ -12,9 +12,22 @@ function Coder()
   ventanas_multiplexadas=multiplexado(ventanas,metadatos,parametros_usuario,cantidad_de_ventanas);
   disp("implementando la combinacion de ventanas");
   ventanas_combinadas=combinacion_ventanas(ventanas_multiplexadas,parametros_usuario,cantidad_de_ventanas);
-  #output_array=generate_audio_array(ventanas_combinadas);
+  output_array=generate_audio_array(ventanas_combinadas);
   disp("generando el audio de salida");
   audiowrite("output.wav",ventanas_combinadas,Fs);  
+end
+
+function jsonfile_str_output=json_decoder(filename,message_display)
+  jsonfile_str_output=read_file(filename);
+  disp(message_display);
+  disp(jsonfile_str_output);
+end
+
+function str_file=read_file(file_name)
+  fid = fopen(file_name); 
+  raw = fread(fid,inf); 
+  str_file = char(raw'); 
+  fclose(fid); 
 end
 
 #funcion de prueba para verificar que al unir ventanas se genera el audio de entrada
@@ -26,24 +39,9 @@ function output_array=generate_audio_array(inputarray)
   end
 end
 
-function metadatos=insertarMetadatos()
-  metadatos_string="";
-  prompt = 'Digite el nombre de artista ';
-  metadatos_string = recibir_datos(prompt,metadatos_string," Artista:");
-  prompt = 'Digite el titulo de la cancion ';
-  metadatos_string = recibir_datos(prompt,metadatos_string," Titulo:");
-  prompt = 'Digite el autor de la pieza ';
-  metadatos_string = recibir_datos(prompt,metadatos_string," Autor:");   
-  prompt = 'Digite el nombre del album ';
-  metadatos_string = recibir_datos(prompt,metadatos_string," Album:");   
-  prompt = 'Digite el a de publicacion ';
-  metadatos_string = recibir_datos(prompt,metadatos_string," Publicacion:");
-  prompt = 'Digite el nombre del artista invitado ';
-  metadatos_string = recibir_datos(prompt,metadatos_string," Invitado:");
-  prompt = 'Digite el nombre del productor ';
-  metadatos_string = recibir_datos(prompt,metadatos_string," Productor:");   
-  originalword =  toascii(metadatos_string);
-  disp(originalword);
+function metadatos=insertarMetadatos(str_metadatos)  
+  originalword =  toascii(str_metadatos);
+  #disp(originalword);
   metadatos="";
   for i=1:length(originalword)
     metadatos = strcat(metadatos,dec2bin(originalword(i)));
@@ -58,10 +56,10 @@ end
 
 function vetanas_reducidas = creador_de_ventanas(input_music_array, tamano_ventana)
   tamano_input=length(input_music_array);
-  disp(length(input_music_array));
+  #disp(length(input_music_array));
   cantidad_de_ventanas=tamano_input/tamano_ventana;
   vetanas_reducidas_fixed=floor(cantidad_de_ventanas);
-  disp(vetanas_reducidas_fixed);
+  #disp(vetanas_reducidas_fixed);
   ventana_output=[];
   ventana_actual=[];
   for index_ventana_actual=1:vetanas_reducidas_fixed;
@@ -75,13 +73,14 @@ function vetanas_reducidas = creador_de_ventanas(input_music_array, tamano_venta
   vetanas_reducidas=ventana_output;
 end 
 
-function params=set_parametros_codificacion()
-  M= input("ingrese el tamano M de las ventanas "); 
-  N= input("ingrese el tamano N de la respuesta al impulso "); 
-  a1= input("ingrese el valor de a1 para codificar 1's ");
-  a0= input("ingrese el valor de a0 para codificar 0's ");
-  t1= input("ingrese el valor de t1 para codificar 1's ");
-  t0= input("ingrese el valor de t0 para codificar 0's ");
+function params=set_parametros_codificacion(string_parametros)
+  Parametros_substring=strsplit(string_parametros,',');
+  M=str2num(strsplit(Parametros_substring{1,1},':'){2});
+  N= str2num(strsplit(Parametros_substring{1,2},':'){2});
+  a1= str2num(strsplit(Parametros_substring{1,3},':'){2});
+  a0= str2num(strsplit(Parametros_substring{1,4},':'){2});
+  t1= str2num(strsplit(Parametros_substring{1,5},':'){2});
+  t0= str2num(strsplit(Parametros_substring{1,6},':'){2});
   params=[M,N,a1,a0,t1,t0];
 end
 
