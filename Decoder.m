@@ -6,8 +6,8 @@ function Decoder()
   disp("Inicializando la generacion de ventanas");
   ventanas= creador_de_ventanas(input_music_array,parametros_usuario(1));   
   disp("realizando la autocorrelacion");
-  
-  
+  binario_decodificado=do_autocorrelacion(ventanas,parametros_usuario);
+  bin_to_string(binario_decodificado);
 end
 
 function jsonfile_str_output=json_decoder(filename,message_display)
@@ -52,11 +52,45 @@ function params=set_parametros_codificacion(string_parametros)
   Parametros_substring=strsplit(string_parametros,',');
   M=str2num(strsplit(Parametros_substring{1,1},':'){2});
   N= str2num(strsplit(Parametros_substring{1,2},':'){2});
-  a1= str2num(strsplit(Parametros_substring{1,3},':'){2});
-  a0= str2num(strsplit(Parametros_substring{1,4},':'){2});
-  t1= str2num(strsplit(Parametros_substring{1,5},':'){2});
-  t0= str2num(strsplit(Parametros_substring{1,6},':'){2});
-  params=[M,N,a1,a0,t1,t0];
+  a0= str2num(strsplit(Parametros_substring{1,3},':'){2});
+  a1= str2num(strsplit(Parametros_substring{1,4},':'){2});
+  t0= str2num(strsplit(Parametros_substring{1,5},':'){2});
+  t1= str2num(strsplit(Parametros_substring{1,6},':'){2});
+  params=[M,N,a0,a1,t0,t1];
 end
 
+function binario_decodificado=do_autocorrelacion(matriz_ventanas,parametros_usuario)
+  [rows,cols]=size(matriz_ventanas);
+  binario_decodificado="";
+  for(index_decodificacion=21:21)
+    autocorrelacion_fft=fft(matriz_ventanas(index_decodificacion,:));
+    autocorrelacion_log=log(autocorrelacion_fft).^2;;
+    vector_autocorrelacion=abs(ifft(autocorrelacion_log));
+    #vector_autocorrelacion=abs(conv(cepstrum,cepstrum));
+    plot(vector_autocorrelacion);
+    binario_decodificado=strcat(binario_decodificado,decodificador_datos_arreglo(vector_autocorrelacion,parametros_usuario));
+  end
+end
+
+function bin_to_string(binstring)
+  str="";
+  disp(binstring);
+  for(index=1:length(binstring)/7)
+    #disp(bin2dec(binstring((index-1)*7+1:(index-1)*7+7)));
+    str=strcat(str,char(bin2dec(binstring((index-1)*7+1:(index-1)*7+7))));
+  end
+  disp(str);
+end
+
+function bin_value=decodificador_datos_arreglo(vector_codificado_autocorrelacionado,parametros_usuario)
+  one=max(vector_codificado_autocorrelacionado(parametros_usuario(6)-5:parametros_usuario(6)+5));
+  zero=max(vector_codificado_autocorrelacionado(parametros_usuario(5)-5:parametros_usuario(5)+5));
+  #disp(one);
+  #disp(zero);  
+  if(zero>one)
+    bin_value="0";
+  else
+    bin_value="1";
+  end
+end
 
