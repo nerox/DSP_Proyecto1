@@ -64,11 +64,12 @@ function binario_decodificado=do_autocorrelacion(matriz_ventanas,parametros_usua
   binario_decodificado="";
   for(index_decodificacion=1:rows)
     autocorrelacion_fft=fft(matriz_ventanas(index_decodificacion,:));
-    autocorrelacion_log=log(autocorrelacion_fft).^2;;
+    autocorrelacion_log=log(abs(autocorrelacion_fft));
     vector_autocorrelacion=abs(ifft(autocorrelacion_log));
+    v=conv(vector_autocorrelacion,vector_autocorrelacion);
     #vector_autocorrelacion=abs(conv(cepstrum,cepstrum));
     #plot(vector_autocorrelacion);
-    binario_decodificado=strcat(binario_decodificado,decodificador_datos_arreglo(vector_autocorrelacion,parametros_usuario));
+    binario_decodificado=strcat(binario_decodificado,decodificador_datos_arreglo(v,parametros_usuario));
   end
 end
 
@@ -83,8 +84,8 @@ function bin_to_string(binstring)
 end
 
 function bin_value=decodificador_datos_arreglo(vector_codificado_autocorrelacionado,parametros_usuario)
-  one=max(vector_codificado_autocorrelacionado(parametros_usuario(6)-5:parametros_usuario(6)+5));
-  zero=max(vector_codificado_autocorrelacionado(parametros_usuario(5)-5:parametros_usuario(5)+5));
+  one=max(vector_codificado_autocorrelacionado(parametros_usuario(6)-2:parametros_usuario(6)+2));
+  zero=max(vector_codificado_autocorrelacionado(parametros_usuario(5)-2:parametros_usuario(5)+2));
   #disp(one);
   #disp(zero);  
   if(zero>one)

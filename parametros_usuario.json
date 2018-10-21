@@ -1,9 +1,9 @@
 {
   "N (tamañovetana)": 280,
-  "M (tamano impulso)": 75,
-  "A0 (amplitud en 0)": 0.25,
+  "M (tamano impulso)": 90,
+  "A0 (amplitud en 0)": 0.5,
   "A1 (amplitud en 1)": 0.5, 
-  "T0 (desplazamiento en 0)": 25,
-  "T1 (desplazamiento en 1)": 50,
+  "T0 (desplazamiento en 0)": 60,
+  "T1 (desplazamiento en 1)": 80,
   "End"    
 }
