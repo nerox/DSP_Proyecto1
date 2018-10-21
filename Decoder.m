@@ -17,7 +17,7 @@ function ventanas_clasificadas = clasificador(ventanas_autocorrelacionadas, cant
   ventanas_clasificadas = []
   ventana_actual = []
   for(index_clasificador=1:cantidad_de_ventanas)
-    ventana_actual = ventanas_autocorrelacionadas(index_clasificador);
+    ventana_actual = ventanas_autocorrelacionadas(index_clasificador,:);
     t0 = ventana_actual(15);
     t1 = ventana_actual(30);
     
@@ -31,13 +31,14 @@ function ventanas_clasificadas = clasificador(ventanas_autocorrelacionadas, cant
  end
  
 function ventanas_autocorrelacionadas = creando_autocorrelacion(vetanas_reducidas,cantidad_de_ventanas)
-   ventanas_autocorrelacionadas = [];
-   disp(cantidad_de_ventanas);
-  for(index_autocirrelacion=1:cantidad_de_ventanas);
+   ventanas_autocorrelacion = [];
+   disp(size(vetanas_reducidas));
+  for(index_autocorrelacion=1:cantidad_de_ventanas);
     ventana_autocorrelacion=[];
-    ventana_autocorrelacion = xcorr(vetanas_reducidas(index_autocirrelacion));
+    ventana_autocorrelacion = xcorr (vetanas_reducidas(index_autocorrelacion,:));
     ventanas_autocorrelacionadas=[ventanas_autocorrelacion;ventana_autocorrelacion];
   end
+  disp(size(ventanas_autocorrelacionadas));
 end  
 
 function jsonfile_str_output=json_decoder(filename,message_display)
