@@ -62,12 +62,12 @@ end
 function binario_decodificado=do_autocorrelacion(matriz_ventanas,parametros_usuario)
   [rows,cols]=size(matriz_ventanas);
   binario_decodificado="";
-  for(index_decodificacion=21:21)
+  for(index_decodificacion=1:rows)
     autocorrelacion_fft=fft(matriz_ventanas(index_decodificacion,:));
     autocorrelacion_log=log(autocorrelacion_fft).^2;;
     vector_autocorrelacion=abs(ifft(autocorrelacion_log));
     #vector_autocorrelacion=abs(conv(cepstrum,cepstrum));
-    plot(vector_autocorrelacion);
+    #plot(vector_autocorrelacion);
     binario_decodificado=strcat(binario_decodificado,decodificador_datos_arreglo(vector_autocorrelacion,parametros_usuario));
   end
 end
