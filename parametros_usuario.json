@@ -1,9 +1,9 @@
 {
-  "N (tamañovetana)": 40,
-  "M (tamañovetana)": 50,
-  "A0 (tamañovetana)": 0.05,
-  "A1 (tamañovetana)": 0.025, 
-  "T1 (tamañovetana)": 30,
-  "T0 (tamañovetana)": 15,
+  "N (tamañovetana)": 280,
+  "M (tamano impulso)": 75,
+  "A0 (amplitud en 0)": 0.25,
+  "A1 (amplitud en 1)": 0.5, 
+  "T0 (desplazamiento en 0)": 25,
+  "T1 (desplazamiento en 1)": 50,
   "End"    
 }

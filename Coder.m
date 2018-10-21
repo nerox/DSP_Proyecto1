@@ -11,10 +11,11 @@ function Coder()
   [cantidad_de_ventanas,tamano_ventana] = size(ventanas);
   ventanas_multiplexadas=multiplexado(ventanas,metadatos,parametros_usuario,cantidad_de_ventanas);
   disp("implementando la combinacion de ventanas");
+  #ventanas_combinadas=overlap_sum(ventanas_multiplexadas,parametros_usuario,cantidad_de_ventanas);
   ventanas_combinadas=combinacion_ventanas(ventanas_multiplexadas,parametros_usuario,cantidad_de_ventanas);
   output_array=generate_audio_array(ventanas_combinadas);
-  disp("generando el audio de salida");
   audiowrite("output.wav",ventanas_combinadas,Fs);  
+  disp("generando el audio de salida");
 end
 
 function jsonfile_str_output=json_decoder(filename,message_display)
@@ -44,8 +45,10 @@ function metadatos=insertarMetadatos(str_metadatos)
   #disp(originalword);
   metadatos="";
   for i=1:length(originalword)
-    metadatos = strcat(metadatos,dec2bin(originalword(i)));
+    metadatos = strcat(metadatos,dec2bin(originalword(i),7));
+    #disp(dec2bin(originalword(i),7));   
   end
+  #disp(length(metadatos));
 end
 
 function metadatos_string=recibir_datos(input_data,metadatos_string_input,key)
@@ -77,37 +80,37 @@ function params=set_parametros_codificacion(string_parametros)
   Parametros_substring=strsplit(string_parametros,',');
   M=str2num(strsplit(Parametros_substring{1,1},':'){2});
   N= str2num(strsplit(Parametros_substring{1,2},':'){2});
-  a1= str2num(strsplit(Parametros_substring{1,3},':'){2});
-  a0= str2num(strsplit(Parametros_substring{1,4},':'){2});
-  t1= str2num(strsplit(Parametros_substring{1,5},':'){2});
-  t0= str2num(strsplit(Parametros_substring{1,6},':'){2});
-  params=[M,N,a1,a0,t1,t0];
+  a0= str2num(strsplit(Parametros_substring{1,3},':'){2});
+  a1= str2num(strsplit(Parametros_substring{1,4},':'){2});
+  t0= str2num(strsplit(Parametros_substring{1,5},':'){2});
+  t1= str2num(strsplit(Parametros_substring{1,6},':'){2});
+  params=[M,N,a0,a1,t0,t1];
 end
 
 function ventanas_multiplexadas=multiplexado(ventanas,metadatos,parametros_usuario,cantidad_de_ventanas)
   tamano_respuesta_impulso=parametros_usuario(2);
-  a0=parametros_usuario(4);
-  a1=parametros_usuario(3);  
-  t0=parametros_usuario(6);
-  t1=parametros_usuario(5);  
+  a0=parametros_usuario(3);
+  a1=parametros_usuario(4);  
+  t0=parametros_usuario(5);
+  t1=parametros_usuario(6);  
   ventanas_multiplexadas=[];  
   for(index_multiplexado=1:cantidad_de_ventanas)
     respuesta_impulso=zeros(1,tamano_respuesta_impulso); 
     ventana_codificada=[]; 
     if(index_multiplexado<=length(metadatos))
-      if(metadatos(index_multiplexado)==0)
-        respuesta_impulso(1)=a0;
-        respuesta_impulso(t0)=1;
+      if(metadatos(index_multiplexado)=='0')
+        respuesta_impulso(1)=1;
+        respuesta_impulso(t0)=a0;
         ventana_codificada=conv(ventanas(index_multiplexado,:),respuesta_impulso);
       else
-        respuesta_impulso(1)=a1;
-        respuesta_impulso(t1)=1;
+        respuesta_impulso(1)=1;
+        respuesta_impulso(t1)=a1;
         ventana_codificada=conv(ventanas(index_multiplexado,:),respuesta_impulso);
       end
       #ventanas_multiplexadas=[ventanas_multiplexadas;ventana_codificada];
     else
-      respuesta_impulso(1)=a0;
-      respuesta_impulso(t0)=1;
+      respuesta_impulso(1)=1;
+      respuesta_impulso(t0)=a0;
       ventana_codificada=conv(ventanas(index_multiplexado,:),respuesta_impulso);
       #ventanas_multiplexadas=[ventanas_multiplexadas;ventana_codificada];
     end
@@ -126,8 +129,35 @@ function ventanas_combinadas=combinacion_ventanas(ventanas_multiplexadas,paramet
   ventanas_combinadas=primer_ventana;
   for(index_multiplexado=2:cantidad_de_ventanas)
     nth_ventana=overlap+ventanas_multiplexadas(index_multiplexado,:);
-    nth_ventana_recortada=nth_ventana(1,1:tamano_ventana);
+    nth_ventana_recortada=ventanas_multiplexadas(index_multiplexado,1:tamano_ventana);
     overlap=[nth_ventana(1,tamano_ventana+1:tamano_convolucion),zeros_aggregate];
     ventanas_combinadas=[ventanas_combinadas,nth_ventana_recortada];
   end  
+end
+
+function ventanas_combinadas=overlap_sum(ventanas_multiplexadas,parametros_usuario,cantidad_de_ventanas)
+  tamano_ventana=parametros_usuario(1);
+  tamano_respuesta_impulso=parametros_usuario(2);
+  tamano_displacement=ceil(tamano_respuesta_impulso/2);
+  tamano_convolucion=tamano_ventana+tamano_respuesta_impulso-1;
+  ventanas_combinadas=[];
+  for(index=1:cantidad_de_ventanas-1)
+    primer_ventana=ventanas_multiplexadas(index,1:tamano_ventana);
+    overlap_onx=ventanas_multiplexadas(index+1,1:tamano_displacement);
+    zeros_aggregatex=zeros(1,tamano_ventana-tamano_displacement); 
+    zeros_aggregatex=[zeros_aggregatex,overlap_onx];
+    primer_ventana=primer_ventana+zeros_aggregatex;
+    overlap_ony=ventanas_multiplexadas(index,tamano_ventana+tamano_displacement:tamano_convolucion);
+    zeros_aggregatey=zeros(1,tamano_ventana+tamano_displacement-1);
+    overlap_ony=[overlap_ony,zeros_aggregatey];
+    ventanas_multiplexadas(index,:)=overlap_ony+ventanas_multiplexadas(index,:);
+    ventanas_combinadas=[ventanas_combinadas,primer_ventana];
+  end
+  ventanas_combinadas=[ventanas_combinadas,ventanas_multiplexadas(cantidad_de_ventanas,1:tamano_ventana)];
+  #for(index_multiplexado=2:cantidad_de_ventanas)
+  #  nth_ventana=overlap+ventanas_multiplexadas(index_multiplexado,:);
+  #  nth_ventana_recortada=nth_ventana(1,1:tamano_ventana);
+  #  overlap=[nth_ventana(1,tamano_ventana+1:tamano_convolucion),zeros_aggregate];
+  #  ventanas_combinadas=[ventanas_combinadas,nth_ventana_recortada];
+  #end  
 end
