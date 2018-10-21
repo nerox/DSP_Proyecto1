@@ -4,11 +4,41 @@ function Decoder()
   str_parametros=json_decoder('parametros_usuario.json',"Se utilizaran los siguientes parametros");
   parametros_usuario=set_parametros_codificacion(str_parametros);
   disp("Inicializando la generacion de ventanas");
-  ventanas= creador_de_ventanas(input_music_array,parametros_usuario(1));   
-  disp("realizando la autocorrelacion");
-  binario_decodificado=do_autocorrelacion(ventanas,parametros_usuario);
-  bin_to_string(binario_decodificado);
+  vetanas_reducidas= creador_de_ventanas(input_music_array,parametros_usuario(1));   
+  disp("Inicializando la autocorrelacion");
+  [cantidad_de_ventanas,tamano_ventana] = size(vetanas_reducidas);
+  ventanas_autocorrelacionadas=creando_autocorrelacion(vetanas_reducidas,cantidad_de_ventanas);
+   disp("Inicializando la clasificación");
+  ventanas_clasificadas = clasificador(ventanas_autocorrelacionadas, cantidad_de_ventanas);
+  
 end
+
+function ventanas_clasificadas = clasificador(ventanas_autocorrelacionadas, cantidad_de_ventanas)
+  ventanas_clasificadas = []
+  ventana_actual = []
+  for(index_clasificador=1:cantidad_de_ventanas)
+    ventana_actual = ventanas_autocorrelacionadas(index_clasificador);
+    t0 = ventana_actual(15);
+    t1 = ventana_actual(30);
+    
+    if(t0>t1)
+      ventanas_clasificadas(index_clasificador) = 0;
+    else
+      ventanas_clasificadas(index_clasificador) = 1;
+    end
+  end
+  #disp(ventanas_clasificadas);
+ end
+ 
+function ventanas_autocorrelacionadas = creando_autocorrelacion(vetanas_reducidas,cantidad_de_ventanas)
+   ventanas_autocorrelacionadas = [];
+   disp(cantidad_de_ventanas);
+  for(index_autocirrelacion=1:cantidad_de_ventanas);
+    ventana_autocorrelacion=[];
+    ventana_autocorrelacion = xcorr(vetanas_reducidas(index_autocirrelacion));
+    ventanas_autocorrelacionadas=[ventanas_autocorrelacion;ventana_autocorrelacion];
+  end
+end  
 
 function jsonfile_str_output=json_decoder(filename,message_display)
   jsonfile_str_output=read_file(filename);
@@ -52,45 +82,11 @@ function params=set_parametros_codificacion(string_parametros)
   Parametros_substring=strsplit(string_parametros,',');
   M=str2num(strsplit(Parametros_substring{1,1},':'){2});
   N= str2num(strsplit(Parametros_substring{1,2},':'){2});
-  a0= str2num(strsplit(Parametros_substring{1,3},':'){2});
-  a1= str2num(strsplit(Parametros_substring{1,4},':'){2});
-  t0= str2num(strsplit(Parametros_substring{1,5},':'){2});
-  t1= str2num(strsplit(Parametros_substring{1,6},':'){2});
-  params=[M,N,a0,a1,t0,t1];
+  a1= str2num(strsplit(Parametros_substring{1,3},':'){2});
+  a0= str2num(strsplit(Parametros_substring{1,4},':'){2});
+  t1= str2num(strsplit(Parametros_substring{1,5},':'){2});
+  t0= str2num(strsplit(Parametros_substring{1,6},':'){2});
+  params=[M,N,a1,a0,t1,t0];
 end
 
-function binario_decodificado=do_autocorrelacion(matriz_ventanas,parametros_usuario)
-  [rows,cols]=size(matriz_ventanas);
-  binario_decodificado="";
-  for(index_decodificacion=1:rows)
-    autocorrelacion_fft=fft(matriz_ventanas(index_decodificacion,:));
-    autocorrelacion_log=log(autocorrelacion_fft).^2;;
-    vector_autocorrelacion=abs(ifft(autocorrelacion_log));
-    #vector_autocorrelacion=abs(conv(cepstrum,cepstrum));
-    #plot(vector_autocorrelacion);
-    binario_decodificado=strcat(binario_decodificado,decodificador_datos_arreglo(vector_autocorrelacion,parametros_usuario));
-  end
-end
-
-function bin_to_string(binstring)
-  str="";
-  disp(binstring);
-  for(index=1:length(binstring)/7)
-    #disp(bin2dec(binstring((index-1)*7+1:(index-1)*7+7)));
-    str=strcat(str,char(bin2dec(binstring((index-1)*7+1:(index-1)*7+7))));
-  end
-  disp(str);
-end
-
-function bin_value=decodificador_datos_arreglo(vector_codificado_autocorrelacionado,parametros_usuario)
-  one=max(vector_codificado_autocorrelacionado(parametros_usuario(6)-5:parametros_usuario(6)+5));
-  zero=max(vector_codificado_autocorrelacionado(parametros_usuario(5)-5:parametros_usuario(5)+5));
-  #disp(one);
-  #disp(zero);  
-  if(zero>one)
-    bin_value="0";
-  else
-    bin_value="1";
-  end
-end
 
