@@ -1,4 +1,4 @@
-function Decoder()
+function Decoder_correcion()
   filename='output.wav';
   [input_music_array,Fs]=audioread(filename);
   str_parametros=json_decoder('parametros_usuario.json',"Se utilizaran los siguientes parametros");
@@ -7,10 +7,10 @@ function Decoder()
   ventanas= creador_de_ventanas(input_music_array,parametros_usuario(1));   
   disp("realizando la autocorrelacion");
   binario_decodificado=do_autocorrelacion(ventanas,parametros_usuario);
-  bin_to_string(binario_decodificado);
+  bin_string_decoded=bin_to_string(binario_decodificado);
   parametros_codificado=json_decoder('metadatos.json',"Se utilizaron los siguientes parametros codificados");
   parametros_codificado_bin=insertarMetadatos(parametros_codificado);
-  evaluate_eficiency(parametros_codificado_bin,binario_decodificado);
+  evaluate_eficiency(parametros_codificado_bin,bin_string_decoded);
 end
 
 function jsonfile_str_output=json_decoder(filename,message_display)
@@ -26,6 +26,11 @@ function str_file=read_file(file_name)
   fclose(fid); 
 end
 
+function metadatos_string=recibir_datos(input_data,metadatos_string_input,key)
+  s=input(input_data,"s"); 
+  metadatos_string=strcat(metadatos_string_input,key);  
+  metadatos_string=strcat(metadatos_string_input,s);
+end
 
 function vetanas_reducidas = creador_de_ventanas(input_music_array, tamano_ventana)
   tamano_input=length(input_music_array);
@@ -66,24 +71,36 @@ function binario_decodificado=do_autocorrelacion(matriz_ventanas,parametros_usua
     vector_autocorrelacion=abs(ifft(autocorrelacion_log));
     v=conv(vector_autocorrelacion,vector_autocorrelacion);
     #vector_autocorrelacion=abs(conv(cepstrum,cepstrum));
-    #plot(vector_autocorrelacion);
+
     binario_decodificado=strcat(binario_decodificado,decodificador_datos_arreglo(v,parametros_usuario));
   end
 end
 
-function bin_to_string(binstring)
+function bin_string_decoded=bin_to_string(binstring)
   str="";
   #disp(binstring);
-  for(index=1:length(binstring)/7)
-    #disp(bin2dec(binstring((index-1)*7+1:(index-1)*7+7)));
-    str=strcat(str,char(bin2dec(binstring((index-1)*7+1:(index-1)*7+7))));
+  bin_string_decoded="";
+  index=1;
+  while(index<length(binstring))
+    if(binstring(index)=='1' && binstring(index+1)=='1' || binstring(index+1)=='1' && binstring(index+2)=='1' || binstring(index)=='1' && binstring(index+2)=='1')
+      bin_string_decoded=strcat(bin_string_decoded,'1');
+    else
+      bin_string_decoded=strcat(bin_string_decoded,'0');      
+    end
+    index=index+3;
   end
+  
+  for(index=1:length(bin_string_decoded)/7)
+    #disp(bin2dec(binstring((index-1)*7+1:(index-1)*7+7)));
+    str=strcat(str,char(bin2dec(bin_string_decoded((index-1)*7+1:(index-1)*7+7))));
+  end
+  disp("Se logro decodificar los siguientes datos");  
   disp(str);
 end
 
 function bin_value=decodificador_datos_arreglo(vector_codificado_autocorrelacionado,parametros_usuario)
-  one=mean(vector_codificado_autocorrelacionado(parametros_usuario(6)-1:parametros_usuario(6)+1));
-  zero=mean(vector_codificado_autocorrelacionado(parametros_usuario(5)-1:parametros_usuario(5)+1));
+  one=max(vector_codificado_autocorrelacionado(parametros_usuario(6)-1:parametros_usuario(6)+1));
+  zero=max(vector_codificado_autocorrelacionado(parametros_usuario(5)-1:parametros_usuario(5)+1));
   #disp(one);
   #disp(zero);  
   if(zero>one)
@@ -114,3 +131,4 @@ function evaluate_eficiency(bin_metadatos_coded, bin_metadatos_decoded)
   end
   printf("Se logro decodificar con la siguiente eficiencia %d", contador_eficiencia/length(bin_metadatos_coded)*100);  
 end
+
